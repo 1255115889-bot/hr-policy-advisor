@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HR政策智能顾问</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --blue: #185FA5;
+    --blue-light: #E6F1FB;
+    --blue-mid: #B5D4F4;
+    --blue-dark: #0C447C;
+    --green-light: #EAF3DE;
+    --green-dark: #3B6D11;
+    --gray-bg: #F7F8FA;
+    --gray-border: rgba(0,0,0,0.1);
+    --gray-border-mid: rgba(0,0,0,0.15);
+    --text-primary: #1a1a1a;
+    --text-secondary: #6b7280;
+    --text-muted: #9ca3af;
+    --white: #ffffff;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+    background: var(--gray-bg);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Top Nav ── */
+  .nav {
+    background: var(--white);
+    border-bottom: 1px solid var(--gray-border);
+    padding: 0 32px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .nav-logo {
+    width: 32px; height: 32px;
+    background: var(--blue);
+    border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .nav-logo svg { width: 18px; height: 18px; fill: none; stroke: white; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .nav-title { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+  .nav-subtitle { font-size: 12px; color: var(--text-muted); margin-left: 4px; }
+  .nav-badge {
+    margin-left: auto;
+    background: var(--green-light);
+    color: var(--green-dark);
+    font-size: 11px; font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 20px;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .nav-badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: #3B6D11;
+    border-radius: 50%;
+  }
+
+  /* ── Main Layout ── */
+  .main {
+    flex: 1;
+    display: flex;
+    gap: 20px;
+    padding: 20px 32px;
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .sidebar-card {
+    background: var(--white);
+    border: 1px solid var(--gray-border);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+  }
+  .sidebar-card h3 {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 10px;
+  }
+  .topic-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 10px;
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    text-align: left;
+    transition: background .15s, color .15s;
+  }
+  .topic-btn:hover { background: var(--blue-light); color: var(--blue-dark); }
+  .topic-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+  .divider { height: 1px; background: var(--gray-border); margin: 4px 0; }
+  .policy-count {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 12px;
+  }
+  .policy-count span:first-child { color: var(--text-secondary); }
+  .policy-count strong { color: var(--blue); font-size: 18px; font-weight: 700; }
+
+  /* ── Chat Area ── */
+  .chat-wrap { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .chat-box {
+    flex: 1;
+    background: var(--white);
+    border: 1px solid var(--gray-border);
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+
+  .chat-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--gray-border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .chat-header-icon {
+    width: 36px; height: 36px;
+    background: var(--blue-light);
+    border-radius: var(--radius-md);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .chat-header-icon svg { width: 18px; height: 18px; fill: none; stroke: var(--blue); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .chat-header-text h2 { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+  .chat-header-text p { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+  .chat-header-meta { margin-left: auto; font-size: 11px; color: var(--text-muted); }
+
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .messages::-webkit-scrollbar { width: 4px; }
+  .messages::-webkit-scrollbar-track { background: transparent; }
+  .messages::-webkit-scrollbar-thumb { background: var(--gray-border-mid); border-radius: 2px; }
+
+  .msg { display: flex; gap: 10px; align-items: flex-start; }
+  .msg.user { flex-direction: row-reverse; }
+
+  .avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600;
+    flex-shrink: 0;
+  }
+  .avatar.bot { background: var(--blue-light); color: var(--blue-dark); }
+  .avatar.user { background: var(--green-light); color: var(--green-dark); }
+  .avatar svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  .msg-content { max-width: 76%; display: flex; flex-direction: column; gap: 6px; }
+  .msg.user .msg-content { align-items: flex-end; }
+
+  .bubble {
+    padding: 11px 15px;
+    border-radius: 14px;
+    font-size: 14px;
+    line-height: 1.65;
+  }
+  .msg.bot .bubble {
+    background: var(--gray-bg);
+    border: 1px solid var(--gray-border);
+    color: var(--text-primary);
+    border-top-left-radius: 4px;
+  }
+  .msg.user .bubble {
+    background: var(--blue);
+    color: white;
+    border-top-right-radius: 4px;
+  }
+  .policy-ref {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    background: var(--blue-light);
+    border: 1px solid var(--blue-mid);
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    color: var(--blue-dark);
+    font-weight: 500;
+  }
+  .policy-ref svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+  .warn-ref {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    background: #FFF7ED;
+    border: 1px solid #FED7AA;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    color: #92400E;
+    font-weight: 500;
+  }
+
+  /* Typing */
+  .typing-dots { display: flex; gap: 4px; align-items: center; padding: 14px 16px; }
+  .dot { width: 7px; height: 7px; background: var(--text-muted); border-radius: 50%; animation: bounce 1.2s infinite; }
+  .dot:nth-child(2) { animation-delay: .2s; }
+  .dot:nth-child(3) { animation-delay: .4s; }
+  @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+
+  /* Suggestions */
+  .suggestions {
+    padding: 0 20px 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .sug {
+    padding: 5px 12px;
+    border: 1px solid var(--gray-border-mid);
+    border-radius: 20px;
+    font-size: 12px;
+    background: var(--white);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .sug:hover { background: var(--blue-light); color: var(--blue-dark); border-color: var(--blue-mid); }
+
+  /* Input */
+  .input-area {
+    padding: 12px 16px;
+    border-top: 1px solid var(--gray-border);
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+    background: var(--white);
+    flex-shrink: 0;
+  }
+  .input-area textarea {
+    flex: 1;
+    resize: none;
+    border: 1px solid var(--gray-border-mid);
+    border-radius: var(--radius-md);
+    padding: 9px 13px;
+    font-size: 14px;
+    font-family: inherit;
+    line-height: 1.5;
+    min-height: 38px;
+    max-height: 120px;
+    color: var(--text-primary);
+    background: var(--gray-bg);
+    outline: none;
+    transition: border-color .15s;
+  }
+  .input-area textarea:focus { border-color: var(--blue); background: var(--white); }
+  .input-area textarea::placeholder { color: var(--text-muted); }
+  .send-btn {
+    width: 38px; height: 38px;
+    border-radius: var(--radius-md);
+    background: var(--blue);
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: opacity .15s, transform .1s;
+  }
+  .send-btn:hover { opacity: .88; }
+  .send-btn:active { transform: scale(.95); }
+  .send-btn:disabled { opacity: .35; cursor: default; }
+  .send-btn svg { width: 17px; height: 17px; fill: none; stroke: white; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* Welcome */
+  .welcome {
+    text-align: center;
+    padding: 32px 20px;
+  }
+  .welcome-icon {
+    width: 56px; height: 56px;
+    background: var(--blue-light);
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 14px;
+  }
+  .welcome-icon svg { width: 28px; height: 28px; fill: none; stroke: var(--blue); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .welcome h3 { font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px; }
+  .welcome p { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+  .welcome-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 20px; }
+  .welcome-card {
+    background: var(--gray-bg);
+    border: 1px solid var(--gray-border);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    cursor: pointer;
+    text-align: left;
+    transition: all .15s;
+  }
+  .welcome-card:hover { border-color: var(--blue-mid); background: var(--blue-light); }
+  .welcome-card p { font-size: 12px; color: var(--text-muted); margin-bottom: 3px; }
+  .welcome-card strong { font-size: 13px; color: var(--text-primary); font-weight: 500; }
+
+  @media (max-width: 768px) {
+    .main { padding: 12px; flex-direction: column; }
+    .sidebar { width: 100%; }
+    .nav { padding: 0 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav">
+  <div class="nav-logo">
+    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+  </div>
+  <span class="nav-title">HR政策智能顾问</span>
+  <span class="nav-subtitle">· 员工手册 v2024</span>
+  <div class="nav-badge">系统在线</div>
+</nav>
+
+<!-- Main -->
+<div class="main">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-card">
+      <h3>快速查询</h3>
+      <button class="topic-btn" onclick="ask('年假有几天？怎么申请？')">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        假期制度
+      </button>
+      <button class="topic-btn" onclick="ask('薪资什么时候发放？')">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        薪酬福利
+      </button>
+      <button class="topic-btn" onclick="ask('出差住宿报销标准是多少？')">
+        <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        出差报销
+      </button>
+      <button class="topic-btn" onclick="ask('如何申请晋升？')">
+        <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        晋升发展
+      </button>
+      <button class="topic-btn" onclick="ask('离职需要提前多久通知？')">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        离职手续
+      </button>
+      <div class="divider"></div>
+      <button class="topic-btn" onclick="ask('员工推荐奖金是多少？')">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        员工福利
+      </button>
+    </div>
+
+    <div class="sidebar-card">
+      <h3>知识库</h3>
+      <div class="policy-count">
+        <span>已收录政策</span>
+        <strong>30</strong>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">更新于 2024年1月</div>
+      <div class="divider" style="margin:10px 0;"></div>
+      <div style="font-size:12px;color:var(--text-secondary);">如问题未收录，请联系</div>
+      <div style="font-size:12px;color:var(--blue);margin-top:2px;">hr@company.com</div>
+    </div>
+  </aside>
+
+  <!-- Chat -->
+  <div class="chat-wrap">
+    <div class="chat-box">
+      <div class="chat-header">
+        <div class="chat-header-icon">
+          <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div class="chat-header-text">
+          <h2>政策问答</h2>
+          <p>基于《员工手册》v2024 · 严格引用政策条款</p>
+        </div>
+        <div class="chat-header-meta" id="msgCount">0 条对话</div>
+      </div>
+
+      <div class="messages" id="messages">
+        <div class="welcome">
+          <div class="welcome-icon">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <h3>您好，我是HR政策智能顾问</h3>
+          <p>我能帮您快速查询公司各项政策规定<br>所有回答均严格基于《员工手册》，并标注政策来源</p>
+          <div class="welcome-grid">
+            <div class="welcome-card" onclick="ask('年假有几天？工作满多久可以享有？')">
+              <p>热门问题</p>
+              <strong>年假天数查询</strong>
+            </div>
+            <div class="welcome-card" onclick="ask('出差餐补和住宿标准是多少？')">
+              <p>热门问题</p>
+              <strong>出差报销标准</strong>
+            </div>
+            <div class="welcome-card" onclick="ask('绩效奖金怎么计算？什么时候发放？')">
+              <p>热门问题</p>
+              <strong>绩效奖金规则</strong>
+            </div>
+            <div class="welcome-card" onclick="ask('员工有哪些培训和发展福利？')">
+              <p>热门问题</p>
+              <strong>学习发展福利</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="suggestions" id="suggestions">
+        <button class="sug" onclick="useSug(this)">试用期工资怎么算？</button>
+        <button class="sug" onclick="useSug(this)">产假有多少天？</button>
+        <button class="sug" onclick="useSug(this)">报销需要多久内提交？</button>
+        <button class="sug" onclick="useSug(this)">年终奖什么时候发？</button>
+      </div>
+
+      <div class="input-area">
+        <textarea id="inp" placeholder="输入您想查询的HR政策问题..." rows="1"
+          onkeydown="handleKey(event)" oninput="resize(this)"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="send()" aria-label="发送">
+          <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SYSTEM = `你是一家公司的HR政策智能顾问，只能根据以下《员工手册》内容回答员工问题。
+
+回答规则：
+1. 如果问题在手册中有明确依据，请给出专业、清晰的回答，并在回答末尾单独一行写上：【依据政策：第X条 - 政策名称】
+2. 如果问题在手册中找不到明确依据，必须回复：该问题暂未收录，请联系HR进一步确认（hr@company.com）。不得编造任何答案。
+3. 回答要简洁专业，使用中文，适当使用换行使内容清晰易读。
+
+=== 员工手册内容 ===
+
+第1条 试用期：新员工试用期为3个月，表现优异可申请缩短至1个月，试用期工资为转正工资的80%。
+
+第2条 工作时间：标准工时为每天8小时，每周40小时，实行弹性工作制，核心工作时间为上午10:00至下午4:00。
+
+第3条 年假：工作满1年享有10天带薪年假，满3年15天，满5年20天，每年最多可结转5天至次年。
+
+第4条 病假：员工患病可申请病假，需提供医院证明，连续病假3天以上须提交三级甲等医院诊断书，病假期间按基本工资70%发放。
+
+第5条 婚假：员工登记结婚可享有10个工作日婚假，需在婚后6个月内使用。
+
+第6条 产假：女员工享有158天产假（含国家法定98天），男员工陪产假15天，难产额外增加15天。
+
+第7条 丧假：直系亲属（父母、配偶、子女）去世享有5天丧假，祖父母或外祖父母去世享有3天丧假。
+
+第8条 调休：加班经审批后可申请调休，调休须在加班后3个月内使用，否则视为自动放弃。
+
+第9条 薪资发放：每月15日发放上月工资，若遇法定节假日则提前至最近工作日发放。
+
+第10条 绩效奖金：年终绩效奖金在次年3月随春节后首次工资发放，金额根据个人绩效评级（A/B/C/D）分别为年薪的30%/20%/10%/0%。
+
+第11条 社保公积金：公司按国家规定缴纳五险一金，个人缴纳比例：养老保险8%，医疗保险2%，住房公积金12%。
+
+第12条 餐补：员工每工作日享有30元餐补，出差期间每日餐补标准提升至：国内一线城市150元，二线城市100元，其他城市80元。
+
+第13条 交通补贴：员工每月享有300元交通补贴，随工资发放，出差期间实报实销。
+
+第14条 通讯补贴：普通员工每月100元通讯补贴，中层管理人员200元，高级管理人员300元。
+
+第15条 出差住宿：国内出差住宿标准：北京/上海/广州/深圳不超过500元/晚，省会城市不超过350元/晚，其他城市不超过250元/晚，超标需部门负责人审批。
+
+第16条 报销流程：费用报销须在发生后30日内提交，通过OA系统填写报销单并附原始票据，超过30日原则上不予报销。
+
+第17条 商业保险：公司为全体员工购买团体补充医疗保险和意外伤害险，保险详情见HR系统"我的福利"模块。
+
+第18条 体检：公司每年为员工安排一次全面体检，体检套餐价值600元，员工可在合作体检中心自行预约。
+
+第19条 学习发展：公司每年为员工提供3000元培训经费，可用于购买在线课程、参加行业培训等，须经直属上级审批。
+
+第20条 晋升机制：晋升评审每年进行两次（6月、12月），需满足：在同岗位工作满1年，最近两次绩效评级不低于B，且有直属上级推荐。
+
+第21条 转岗：员工可申请内部转岗，须在现岗位工作满1年，通过目标部门面试，并获得现部门负责人同意。
+
+第22条 离职流程：员工主动离职须提前30日书面通知公司（试用期提前3日），办理完工作交接后方可完成离职手续。
+
+第23条 竞业限制：核心岗位（研发、销售、高管）员工离职后12个月内不得加入直接竞争对手公司，竞业补偿为月均工资的50%。
+
+第24条 保密协议：全体员工须签署保密协议，对公司商业秘密、客户信息、技术资料负有保密义务，有效期自入职起至离职后2年。
+
+第25条 行为准则：员工须遵守公司行为准则，禁止在工作时间从事与工作无关的兼职，不得利用公司资源为个人谋利。
+
+第26条 投诉举报：员工对工作中遇到的骚扰、歧视等问题可通过hr@company.com或匿名举报信箱向HR部门反映，公司承诺严格保密。
+
+第27条 停车福利：总部园区提供免费停车位，按需申请，先到先得，车位紧张时优先保障残障员工和孕期员工。
+
+第28条 节日福利：公司在春节、端午、中秋、元旦等传统节日发放节日礼品或礼品卡，标准为每次500元。
+
+第29条 弹性福利：员工每年享有2000元弹性福利积分，可在福利商城兑换健身卡、京东卡、旅游产品等。
+
+第30条 员工推荐：员工成功推荐外部人才入职并通过试用期，可获得3000元（普通岗位）或5000元（技术/管理岗位）推荐奖金。`;
+
+let loading = false;
+let msgCount = 0;
+const messagesEl = document.getElementById('messages');
+const inp = document.getElementById('inp');
+const sendBtn = document.getElementById('sendBtn');
+
+function resize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+}
+
+function useSug(btn) {
+  inp.value = btn.textContent;
+  document.getElementById('suggestions').style.display = 'none';
+  send();
+}
+
+function ask(q) {
+  inp.value = q;
+  send();
+}
+
+function updateCount() {
+  document.getElementById('msgCount').textContent = msgCount + ' 条对话';
+}
+
+function addMsg(role, text, ref) {
+  const welcome = messagesEl.querySelector('.welcome');
+  if (welcome) welcome.remove();
+
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+
+  const avatarHtml = role === 'bot'
+    ? `<div class="avatar bot"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="10" rx="2" ry="2"/><path d="M12 11V8"/><circle cx="12" cy="6" r="2"/><path d="M8 11V9a4 4 0 0 1 8 0v2"/></svg></div>`
+    : `<div class="avatar user"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>`;
+
+  const escaped = text.replace(/</g, '&lt;').replace(/\n/g, '<br>');
+  let refHtml = '';
+  if (ref) {
+    const isWarn = ref.includes('暂未收录');
+    refHtml = isWarn
+      ? `<div class="warn-ref"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>${ref}</div>`
+      : `<div class="policy-ref"><svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>${ref}</div>`;
+  }
+
+  div.innerHTML = `${avatarHtml}<div class="msg-content"><div class="bubble">${escaped}</div>${refHtml}</div>`;
+  messagesEl.appendChild(div);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+  msgCount++;
+  updateCount();
+}
+
+function showTyping() {
+  const d = document.createElement('div');
+  d.className = 'msg bot'; d.id = 'typing';
+  d.innerHTML = `<div class="avatar bot"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="10" rx="2" ry="2"/><path d="M12 11V8"/><circle cx="12" cy="6" r="2"/><path d="M8 11V9a4 4 0 0 1 8 0v2"/></svg></div><div class="msg-content"><div class="bubble" style="padding:0"><div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div></div>`;
+  messagesEl.appendChild(d);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function hideTyping() {
+  const t = document.getElementById('typing');
+  if (t) t.remove();
+}
+
+function parseResp(text) {
+  const m = text.match(/【依据政策：(.+?)】/);
+  const ref = m ? m[1] : null;
+  const clean = text.replace(/【依据政策：.+?】/g, '').trim();
+  const isUnknown = clean.includes('暂未收录');
+  return {
+    text: clean,
+    ref: ref ? `依据：第${ref}` : (isUnknown ? '该问题暂未收录，请联系 hr@company.com' : null)
+  };
+}
+
+async function send() {
+  const q = inp.value.trim();
+  if (!q || loading) return;
+  loading = true; sendBtn.disabled = true;
+  inp.value = ''; inp.style.height = 'auto';
+  document.getElementById('suggestions').style.display = 'none';
+  addMsg('user', q);
+  showTyping();
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: SYSTEM,
+        messages: [{ role: 'user', content: q }]
+      })
+    });
+    const data = await res.json();
+    hideTyping();
+    const raw = data.content?.[0]?.text || '服务暂时不可用，请稍后再试。';
+    const { text, ref } = parseResp(raw);
+    addMsg('bot', text, ref);
+  } catch (e) {
+    hideTyping();
+    addMsg('bot', '网络异常，请稍后重试。');
+  }
+  loading = false; sendBtn.disabled = false;
+  inp.focus();
+}
+</script>
+</body>
+</html>
