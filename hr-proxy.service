@@ -1,0 +1,15 @@
+[Unit]
+Description=HR Policy Advisor - API Proxy
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/hr-policy-advisor
+EnvironmentFile=/opt/hr-policy-advisor/.env
+ExecStart=/usr/bin/python3 /opt/hr-policy-advisor/proxy.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
